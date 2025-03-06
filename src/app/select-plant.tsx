@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
-import { getPlants } from "../database/plantsDb"; // Importe a função getPlants
+import { getPlants } from "../database/plantsDb";
 
-// Defina o tipo para uma planta
+// Definição do tipo para uma planta
 interface Plant {
   id: number;
   nome: string;
@@ -11,27 +11,43 @@ interface Plant {
   umidade: number;
 }
 
+// Definição do tipo para o corpo da mensagem WebSocket
+interface BodyWSESP {
+  id_plant: number;
+  humidity_level: number;
+}
+
+const WS_URL = "ws://192.168.134.111:81"
+
 export default function SelectPlant() {
   const router = useRouter();
-  const [plants, setPlants] = useState<Plant[]>([]); // Estado para armazenar a lista de plantas
+  const [plants, setPlants] = useState<Plant[]>([]);
 
-  // Busca as plantas do banco de dados ao carregar a tela
   useEffect(() => {
     const fetchPlants = async () => {
-      const plantsFromDb = await getPlants(); // Busca as plantas do banco de dados
-      setPlants(plantsFromDb); // Atualiza o estado com as plantas obtidas
+      const plantsFromDb = await getPlants();
+      setPlants(plantsFromDb);
     };
-
     fetchPlants();
   }, []);
 
-  // Função para selecionar uma planta
+  // Função para enviar dados via WebSocket
+  const sendNewHumidityLevel = (newLevel: number, plantId: number) => {
+    const ws = new WebSocket(WS_URL);
+    ws.onopen = () => {
+      const jsonMessage = JSON.stringify({
+        humidity_level: newLevel,
+        id_plant: plantId,
+      } as BodyWSESP);
+      ws.send(jsonMessage);
+      ws.close();
+    };
+  };
+
+  // Função para selecionar uma planta e enviar os dados via WebSocket
   const handleSelectPlant = (plant: Plant) => {
-    // Navega de volta para a tela principal e passa a planta selecionada como parâmetro
-    router.push({
-      pathname: "/",
-      params: { selectedPlant: JSON.stringify(plant) }, // Passa a planta como string
-    });
+    sendNewHumidityLevel(plant.umidade, plant.id);
+    router.push("/select-plant");
   };
 
   return (
@@ -39,7 +55,6 @@ export default function SelectPlant() {
       <Text className="text-2xl font-bold text-green-700 text-center mb-6">
         Selecione uma Planta
       </Text>
-
       <ScrollView>
         {plants.map((plant) => (
           <TouchableOpacity

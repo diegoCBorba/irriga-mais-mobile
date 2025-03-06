@@ -26,11 +26,11 @@ interface BodyWSESP{
 
 export default function Home() {
   const router = useRouter(); // Inicialize o useRouter
-  const params = useLocalSearchParams();
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null); // Estado para armazenar a planta selecionada
   const [sensorData, setSensorData] = useState<dataWSEsp>();
   const [isConnected, setIsConnected] = useState(false);
   const [plants, setPlants] = useState<Plant[]>([]);
+  const [errorMessage, setErrorMessage] = useState("");
   const WS_URL = "ws://192.168.134.111:81"
 
   // Inicializa o banco de dados e carrega as plantas ao montar o componente
@@ -43,14 +43,6 @@ export default function Home() {
 
     loadPlants();
   }, []);
-
-  // Atualiza a planta selecionada quando os parâmetros da rota mudam
-  useEffect(() => {
-    if (params.selectedPlant) {
-      const plant = JSON.parse(params.selectedPlant as string); // Converte a string de volta para objeto
-      setSelectedPlant(plant); // Atualiza a planta selecionada
-    }
-  }, [params.selectedPlant]);
   
   useEffect(() => {
 
@@ -58,36 +50,33 @@ export default function Home() {
 
     ws.onopen = () => {
       console.log("Conectado ao WebSocket");
+      setErrorMessage("");
       setIsConnected(true);
     };
 
     ws.onmessage = (event) => {
       try {
         const data: dataWSEsp = JSON.parse(event.data);
-        console.log("Dados recebidos:", data);
-
-        setSensorData(data)
-
-        // if (
-        //   typeof data.humidity === "number" &&
-        //   typeof data.humidity_level === "number" &&
-        //   typeof data.id_plant === "number"
-        // ) {
-        //   setSensorData(data)
-        // }
+        if (
+          typeof data.humidity === "number" &&
+          typeof data.humidity_level === "number" &&
+          typeof data.id_plant === "number"
+        ) {
+          setSensorData(data)
+        }
       } catch (error) {
         console.error("Erro ao processar os dados do WebSocket:", error);
+        setErrorMessage("Erro inesperado ao enviar dados.");
       }
     };
 
     ws.onclose = () => {
-      console.log("Desconectado do WebSocket");
       setIsConnected(false);
     };
 
     ws.onerror = (error) => {
       console.error("Erro na conexão WebSocket:", error);
-      setIsConnected(false);
+      setErrorMessage("Falha ao conectar ao dispositivo.");
     };
 
     return () => {
@@ -95,14 +84,16 @@ export default function Home() {
     };
   }, []);
 
-  const sendNewHumidityLevel = (newLevel: number, plantId: number) => {
-    const ws = new WebSocket(WS_URL);
-    ws.onopen = () => {
-      const jsonMessage = JSON.stringify({ humidity_level: newLevel, id_plant: plantId });
-      ws.send(jsonMessage);
-      ws.close();
-    };
-  };
+  useEffect(() => {
+    if (sensorData && plants.length > 0) {
+      const foundPlant = plants.find(plant => plant.id === sensorData.id_plant);
+      if (foundPlant) {
+        setSelectedPlant(foundPlant);
+      } else {
+        router.push("/select-plant");
+      }
+    }
+  }, [sensorData, plants, router]);
 
   // Função para navegar para a tela de adicionar plantas
   const navigateToAddPlant = () => {
@@ -121,9 +112,9 @@ export default function Home() {
 
       <View className="w-full items-center justify-center">
         <View className="w-full items-center mt-16">
-          <MaterialIcons name="bluetooth-audio" size={24} color="black" />
+          <MaterialIcons name={isConnected? "wifi" : "wifi-off"} size={24} color="black" />
           <Text className="uppercase font-semibold font-baskervville">Status</Text>
-          <Text className="uppercase text-green-600 font-baskervville">Connected</Text>
+          <Text className="uppercase text-green-600 font-baskervville">{isConnected ? "Connected" : "Not Connected"}</Text>
         </View>
 
         {/* Seletor de plantas */}
@@ -152,11 +143,11 @@ export default function Home() {
           ) : (
             <>
               <View className="w-64 h-64 rounded-full border-8 border-green-700 flex items-center justify-center">
-                <MaterialIcons name="block" size={84} color="black" />
+                <MaterialIcons name={isConnected ? "block" : "error-outline"} size={84} color="black" />
               </View>
               <View className="w-full items-center mt-4">
                 <Text className="text-2xl font-baskervville uppercase text-green-800">
-                  Selecione uma planta
+                  {isConnected ? "Selecione uma planta" : "Conectando"}
                 </Text>
               </View>
             </>
@@ -164,20 +155,17 @@ export default function Home() {
         }
         </View>
 
-        <TouchableOpacity 
-          className="mt-6 bg-gray-300 px-6 py-3 rounded-lg flex-row items-center"
-          onPress={() => sendNewHumidityLevel(60, 2)}
-        >
-          <Text className="ml-2 uppercase font-semibold">CLIQUE TESTE</Text>
-        </TouchableOpacity>
+        <View className="items-center mt-4">
+          {errorMessage && <Text className="text-red-600">{errorMessage}</Text>}
+        </View>
       </View>
 
       <View className="absolute bottom-0 w-full bg-green-300 py-6 flex-row justify-between px-10">
-        <TouchableOpacity onPress={navigateToAddPlant}>
-          <Feather name="plus-circle" size={24} color="white" />
+        <TouchableOpacity disabled={!isConnected} onPress={navigateToAddPlant}>
+          <Feather name="plus-circle" size={24} color={isConnected ? "white" : "#136131"} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={navigateToSelectPlant}>
-          <MaterialIcons name="save" size={24} color="white" />
+        <TouchableOpacity disabled={!isConnected} onPress={navigateToSelectPlant}>
+          <MaterialIcons name="save" size={24} color={isConnected ? "white" : "#136131"} />
         </TouchableOpacity>
       </View>
     </View>
