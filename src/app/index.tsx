@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, Image } from "react-native";
 import { getPlants, initDb } from "../database/plantsDb"; // Importe as funções do banco de dados
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Feather from '@expo/vector-icons/Feather';
 
@@ -15,11 +15,6 @@ interface Plant {
 
 interface dataWSEsp {
   humidity: number,
-  id_plant: number,
-  humidity_level: number,
-}
-
-interface BodyWSESP{
   id_plant: number,
   humidity_level: number,
 }
