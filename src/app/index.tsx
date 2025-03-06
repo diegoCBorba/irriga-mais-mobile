@@ -13,24 +13,96 @@ interface Plant {
   umidade: number;
 }
 
+interface dataWSEsp {
+  humidity: number,
+  id_plant: number,
+  humidity_level: number,
+}
+
+interface BodyWSESP{
+  id_plant: number,
+  humidity_level: number,
+}
+
 export default function Home() {
   const router = useRouter(); // Inicialize o useRouter
   const params = useLocalSearchParams();
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null); // Estado para armazenar a planta selecionada
+  const [sensorData, setSensorData] = useState<dataWSEsp>();
+  const [isConnected, setIsConnected] = useState(false);
+  const [plants, setPlants] = useState<Plant[]>([]);
+  const WS_URL = "ws://192.168.134.111:81"
 
-  // Busca as plantas ao carregar a tela
+  // Inicializa o banco de dados e carrega as plantas ao montar o componente
   useEffect(() => {
-    initDb(); // Inicializa o banco de dados
+    async function loadPlants() {
+      initDb(); // Inicializa o banco de dados
+      const storedPlants = await getPlants(); // Obtém a lista de plantas do banco
+      setPlants(storedPlants);
+    }
+
+    loadPlants();
   }, []);
 
-    // Atualiza a planta selecionada quando os parâmetros da rota mudam
-    useEffect(() => {
-      if (params.selectedPlant) {
-        const plant = JSON.parse(params.selectedPlant as string); // Converte a string de volta para objeto
-        setSelectedPlant(plant); // Atualiza a planta selecionada
-      }
-    }, [params.selectedPlant]);
+  // Atualiza a planta selecionada quando os parâmetros da rota mudam
+  useEffect(() => {
+    if (params.selectedPlant) {
+      const plant = JSON.parse(params.selectedPlant as string); // Converte a string de volta para objeto
+      setSelectedPlant(plant); // Atualiza a planta selecionada
+    }
+  }, [params.selectedPlant]);
   
+  useEffect(() => {
+
+    const ws = new WebSocket(WS_URL); // Substitua pelo IP do ESP32
+
+    ws.onopen = () => {
+      console.log("Conectado ao WebSocket");
+      setIsConnected(true);
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data: dataWSEsp = JSON.parse(event.data);
+        console.log("Dados recebidos:", data);
+
+        setSensorData(data)
+
+        // if (
+        //   typeof data.humidity === "number" &&
+        //   typeof data.humidity_level === "number" &&
+        //   typeof data.id_plant === "number"
+        // ) {
+        //   setSensorData(data)
+        // }
+      } catch (error) {
+        console.error("Erro ao processar os dados do WebSocket:", error);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("Desconectado do WebSocket");
+      setIsConnected(false);
+    };
+
+    ws.onerror = (error) => {
+      console.error("Erro na conexão WebSocket:", error);
+      setIsConnected(false);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
+
+  const sendNewHumidityLevel = (newLevel: number, plantId: number) => {
+    const ws = new WebSocket(WS_URL);
+    ws.onopen = () => {
+      const jsonMessage = JSON.stringify({ humidity_level: newLevel, id_plant: plantId });
+      ws.send(jsonMessage);
+      ws.close();
+    };
+  };
 
   // Função para navegar para a tela de adicionar plantas
   const navigateToAddPlant = () => {
@@ -58,7 +130,7 @@ export default function Home() {
         <View className="w-full items-center my-6">
 
           {/* Detalhes da planta selecionada */}
-          {selectedPlant ? (
+          {isConnected && selectedPlant ? (
             <>
               <View className="w-64 h-64 rounded-full border-8 border-green-700 flex items-center justify-center">
                 <Image
@@ -66,7 +138,7 @@ export default function Home() {
                   className="h-32"
                   resizeMode="contain"
                 />
-                <Text className="text-xl mt-2">x%</Text>
+                <Text className="text-xl mt-2">{sensorData ? `${sensorData.humidity}%` : "N/A"}</Text>
               </View>
               <View className="w-full items-center mt-4">
                 <Text className="text-2xl font-baskervville uppercase text-green-800">
@@ -92,9 +164,11 @@ export default function Home() {
         }
         </View>
 
-        <TouchableOpacity className="mt-6 bg-gray-300 px-6 py-3 rounded-lg flex-row items-center">
-          <MaterialIcons name="bluetooth-disabled" size={24} color="black" />
-          <Text className="ml-2 uppercase font-semibold">Disconnect</Text>
+        <TouchableOpacity 
+          className="mt-6 bg-gray-300 px-6 py-3 rounded-lg flex-row items-center"
+          onPress={() => sendNewHumidityLevel(60, 2)}
+        >
+          <Text className="ml-2 uppercase font-semibold">CLIQUE TESTE</Text>
         </TouchableOpacity>
       </View>
 
