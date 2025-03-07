@@ -40,6 +40,17 @@ export const getPlants = async (): Promise<{ id: number; nome: string; nomeCient
   }
 };
 
+// 📌 Buscar planta por ID
+export const getPlantById = async (id: number): Promise<{ id: number; nome: string; nomeCientifico: string | null; umidade: number } | null> => {
+  try {
+    const result = await db.getFirstAsync("SELECT * FROM plants WHERE id = ?;", [id]);
+    return result as { id: number; nome: string; nomeCientifico: string | null; umidade: number } | null;
+  } catch (error) {
+    console.error("Erro ao buscar planta por ID:", error);
+    return null;
+  }
+};
+
 // 📌 Remover uma planta
 export const removePlant = async (id: number): Promise<boolean> => {
   try {

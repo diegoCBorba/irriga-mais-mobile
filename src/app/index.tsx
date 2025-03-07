@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
-import { getPlants, initDb } from "../database/plantsDb"; // Importe as funções do banco de dados
+import { getPlantById, initDb } from "../database/plantsDb"; // Importe as funções do banco de dados
 import { useRouter } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Feather from '@expo/vector-icons/Feather';
+import { useWebSocket } from "../context/WebSocketContext";
+import { Snackbar } from "react-native-paper";
 
 // Defina o tipo para uma planta
 interface Plant {
@@ -13,82 +15,38 @@ interface Plant {
   umidade: number;
 }
 
-interface dataWSEsp {
-  humidity: number,
-  id_plant: number,
-  humidity_level: number,
-}
-
 export default function Home() {
+  const { isConnected, sensorData } = useWebSocket();
   const router = useRouter(); // Inicialize o useRouter
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null); // Estado para armazenar a planta selecionada
-  const [sensorData, setSensorData] = useState<dataWSEsp>();
-  const [isConnected, setIsConnected] = useState(false);
-  const [plants, setPlants] = useState<Plant[]>([]);
-  const [errorMessage, setErrorMessage] = useState("");
-  const WS_URL = "ws://192.168.134.111:81"
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
-  // Inicializa o banco de dados e carrega as plantas ao montar o componente
+  // Inicializa o banco de dados ao montar o componente
   useEffect(() => {
-    async function loadPlants() {
-      initDb(); // Inicializa o banco de dados
-      const storedPlants = await getPlants(); // Obtém a lista de plantas do banco
-      setPlants(storedPlants);
-    }
-
-    loadPlants();
+    initDb();
   }, []);
-  
+
+  // Verifica se a planta do sensor existe no banco de dados
   useEffect(() => {
-
-    const ws = new WebSocket(WS_URL); // Substitua pelo IP do ESP32
-
-    ws.onopen = () => {
-      console.log("Conectado ao WebSocket");
-      setErrorMessage("");
-      setIsConnected(true);
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data: dataWSEsp = JSON.parse(event.data);
-        if (
-          typeof data.humidity === "number" &&
-          typeof data.humidity_level === "number" &&
-          typeof data.id_plant === "number"
-        ) {
-          setSensorData(data)
+    if (sensorData) {
+      const checkPlant = async () => {
+        const foundPlant = await getPlantById(sensorData.id_plant);
+        if (foundPlant) {
+          setSelectedPlant(foundPlant);
+        } else {
+          router.push("/select-plant");
         }
-      } catch (error) {
-        console.error("Erro ao processar os dados do WebSocket:", error);
-        setErrorMessage("Erro inesperado ao enviar dados.");
-      }
-    };
-
-    ws.onclose = () => {
-      setIsConnected(false);
-    };
-
-    ws.onerror = (error) => {
-      console.error("Erro na conexão WebSocket:", error);
-      setErrorMessage("Falha ao conectar ao dispositivo.");
-    };
-
-    return () => {
-      ws.close();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (sensorData && plants.length > 0) {
-      const foundPlant = plants.find(plant => plant.id === sensorData.id_plant);
-      if (foundPlant) {
-        setSelectedPlant(foundPlant);
-      } else {
-        router.push("/select-plant");
-      }
+      };
+      checkPlant();
     }
-  }, [sensorData, plants, router]);
+
+    if (sensorData?.message && sensorData.message !== snackbarMessage) {
+      setSnackbarMessage(sensorData.message);
+      setSnackbarVisible(true);
+    }
+  }, [sensorData, router]);
+
 
   // Função para navegar para a tela de adicionar plantas
   const navigateToAddPlant = () => {
@@ -124,7 +82,8 @@ export default function Home() {
                   className="h-32"
                   resizeMode="contain"
                 />
-                <Text className="text-xl mt-2">{sensorData ? `${sensorData.humidity}%` : "N/A"}</Text>
+                <Text className="text-xl mt-2">{
+                sensorData ? `${(sensorData.humidity > 100 ? "100" : sensorData.humidity.toFixed(0))}%` : "N/A"}</Text>
               </View>
               <View className="w-full items-center mt-4">
                 <Text className="text-2xl font-baskervville uppercase text-green-800">
@@ -132,6 +91,9 @@ export default function Home() {
                 </Text>
                 <Text className="text-lg font-baskervville">
                   {selectedPlant.nomeCientifico || "Nome científico não informado"}
+                </Text>
+                <Text className="text-sm font-baskervville">
+                  {`Umidade máxima: ${selectedPlant.umidade}%` || "Humidade máxima não informada"}
                 </Text>
               </View>
             </>
@@ -149,10 +111,6 @@ export default function Home() {
           )
         }
         </View>
-
-        <View className="items-center mt-4">
-          {errorMessage && <Text className="text-red-600">{errorMessage}</Text>}
-        </View>
       </View>
 
       <View className="absolute bottom-0 w-full bg-green-300 py-6 flex-row justify-between px-10">
@@ -163,6 +121,11 @@ export default function Home() {
           <MaterialIcons name="save" size={24} color={isConnected ? "white" : "#136131"} />
         </TouchableOpacity>
       </View>
+
+        {/* Snackbar de Notificação */}
+        <Snackbar className="mb-24" visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)} duration={3000} action={{ label: "OK" }}>
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 }

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { getPlants } from "../database/plantsDb";
+import { useWebSocket } from "../context/WebSocketContext";
 
 // Definição do tipo para uma planta
 interface Plant {
@@ -11,15 +12,8 @@ interface Plant {
   umidade: number;
 }
 
-// Definição do tipo para o corpo da mensagem WebSocket
-interface BodyWSESP {
-  id_plant: number;
-  humidity_level: number;
-}
-
-const WS_URL = "ws://192.168.134.111:81"
-
 export default function SelectPlant() {
+  const { sendNewHumidityLevel } = useWebSocket();
   const router = useRouter();
   const [plants, setPlants] = useState<Plant[]>([]);
 
@@ -31,23 +25,10 @@ export default function SelectPlant() {
     fetchPlants();
   }, []);
 
-  // Função para enviar dados via WebSocket
-  const sendNewHumidityLevel = (newLevel: number, plantId: number) => {
-    const ws = new WebSocket(WS_URL);
-    ws.onopen = () => {
-      const jsonMessage = JSON.stringify({
-        humidity_level: newLevel,
-        id_plant: plantId,
-      } as BodyWSESP);
-      ws.send(jsonMessage);
-      ws.close();
-    };
-  };
-
   // Função para selecionar uma planta e enviar os dados via WebSocket
   const handleSelectPlant = (plant: Plant) => {
     sendNewHumidityLevel(plant.umidade, plant.id);
-    router.push("/select-plant");
+    router.push("/");
   };
 
   return (
