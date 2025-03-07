@@ -4,7 +4,6 @@ import { useRouter } from "expo-router";
 import { getPlants } from "../database/plantsDb";
 import { useWebSocket } from "../context/WebSocketContext";
 
-// Definição do tipo para uma planta
 interface Plant {
   id: number;
   nome: string;
@@ -13,22 +12,23 @@ interface Plant {
 }
 
 export default function SelectPlant() {
-  const { sendNewHumidityLevel } = useWebSocket();
+  const { sendNewHumidityLevel } = useWebSocket(); // Função para enviar um novo nível de umidade via WebSocket
   const router = useRouter();
-  const [plants, setPlants] = useState<Plant[]>([]);
+  const [plants, setPlants] = useState<Plant[]>([]); // Estado para armazenar a lista de plantas
 
+  // Efeito para buscar as plantas do banco de dados ao montar o componente
   useEffect(() => {
     const fetchPlants = async () => {
-      const plantsFromDb = await getPlants();
-      setPlants(plantsFromDb);
+      const plantsFromDb = await getPlants(); // Busca as plantas do banco de dados
+      setPlants(plantsFromDb); // Atualiza o estado com as plantas obtidas
     };
-    fetchPlants();
+    fetchPlants(); // Executa a função de busca
   }, []);
 
   // Função para selecionar uma planta e enviar os dados via WebSocket
   const handleSelectPlant = (plant: Plant) => {
-    sendNewHumidityLevel(plant.umidade, plant.id);
-    router.push("/");
+    sendNewHumidityLevel(plant.umidade, plant.id); // Envia o nível de umidade e o ID da planta via WebSocket
+    router.push("/"); // Navega de volta para a tela inicial
   };
 
   return (
@@ -36,6 +36,7 @@ export default function SelectPlant() {
       <Text className="text-2xl font-bold text-green-700 text-center mb-6">
         Selecione uma Planta
       </Text>
+
       <ScrollView>
         {plants.map((plant) => (
           <TouchableOpacity

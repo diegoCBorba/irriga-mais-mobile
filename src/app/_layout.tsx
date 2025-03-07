@@ -47,6 +47,13 @@ export default function Layout() {
               title: "Selecionar Planta", // Título da tela (não será exibido, pois o header está oculto)
             }}
           />
+
+          <Stack.Screen
+            name="report" // Nome do arquivo app/report.tsx
+            options={{
+              title: "Relatorio",
+            }}
+          />
         </Stack>
       </>
     </WebSocketProvider>

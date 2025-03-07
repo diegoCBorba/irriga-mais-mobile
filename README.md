@@ -1,6 +1,6 @@
 # Irriga+
 
-O **Irriga+** é um aplicativo móvel que se comunica com um dispositivo de irrigação automática baseado em Arduino via Bluetooth. O app permite ao usuário monitorar o nível de umidade do solo e ajustar os presets de irrigação de acordo com o tipo de planta que está sendo cultivada.
+O **Irriga+** é um aplicativo móvel que se comunica com um dispositivo de irrigação automática baseado em ESP32 via Wi-Fi. O app permite ao usuário monitorar o nível de umidade do solo e ajustar os presets de irrigação de acordo com o tipo de planta que está sendo cultivada, com atualizações em tempo real via WebSocket.
 
 ---
 
@@ -15,7 +15,7 @@ O **Irriga+** é um aplicativo móvel que se comunica com um dispositivo de irri
    - Permite ao usuário selecionar a planta que está sendo cultivada.
 
 3. **Controle de Irrigação**:
-   - Envia comandos via Bluetooth para o dispositivo Arduino ajustar a irrigação com base no tipo de planta selecionada.
+   - Envia comandos via Wi-Fi para o dispositivo ESP32 ajustar a irrigação com base no tipo de planta selecionada.
    - Permite alternar entre diferentes presets de irrigação.
 
 4. **Banco de Dados Local**:
@@ -35,15 +35,16 @@ O **Irriga+** é um aplicativo móvel que se comunica com um dispositivo de irri
 - **Expo Router**: Roteamento para navegação entre telas.
 - **NativeWind**: Biblioteca para estilização com Tailwind CSS no React Native.
 - **Expo SQLite**: Para armazenamento local de dados das plantas.
-- **React Native Bluetooth Serial Next**: Para comunicação Bluetooth com o dispositivo Arduino.
+- **React Native WebSocket**: Para comunicação em tempo real com o dispositivo ESP32.
 
-### Backend (Dispositivo Arduino)
-- **Arduino**: Microcontrolador para controle do sistema de irrigação.
-- **Bluetooth Module (HC-05/HC-06)**: Para comunicação com o aplicativo móvel.
+### Backend (Dispositivo ESP32)
+- **ESP32**: Microcontrolador para controle do sistema de irrigação.
+- **Wi-Fi**: Comunicação sem fio com o aplicativo móvel.
 - **Sensor de Umidade do Solo**: Para medir a umidade do solo em tempo real.
 - **Relé**: Para controlar a ativação da bomba d'água.
 - **Bomba d'água**: Dispositivo utilizado para regar as plantas.
 
+---
 
 ## Como Executar o Projeto
 
@@ -56,7 +57,7 @@ O **Irriga+** é um aplicativo móvel que se comunica com um dispositivo de irri
 
 1. Clone o repositório:
    ```bash
-   git clone https://github.com/seu-usuario/irriga-mais.git
+   git@github.com:diegoCBorba/irriga-mais-mobile.git
    cd irriga-mais
    ```
 
