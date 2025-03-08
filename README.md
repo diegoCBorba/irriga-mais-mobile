@@ -78,3 +78,13 @@ O **Irriga+** é um aplicativo móvel que se comunica com um dispositivo de irri
    npm run android  # Para Android
    npm run ios      # Para iOS
    ```
+
+## Hardware (ESP32)
+
+O hardware do sistema de irrigação automática é baseado no ESP32 e é responsável por coletar dados do sensor de umidade do solo, controlar o motor de irrigação e se comunicar com o aplicativo móvel via WebSocket.
+
+### Repositório do Código do ESP32
+
+O código-fonte do firmware do ESP32 está disponível no seguinte repositório:
+
+🔗 **[Repositório do ESP32](https://github.com/diegoCBorba/irriga-mais-esp32)**
