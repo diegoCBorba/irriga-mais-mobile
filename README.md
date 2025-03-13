@@ -43,6 +43,7 @@ O **Irriga+** é um aplicativo móvel que se comunica com um dispositivo de irri
 - **Sensor de Umidade do Solo**: Para medir a umidade do solo em tempo real.
 - **Relé**: Para controlar a ativação da bomba d'água.
 - **Bomba d'água**: Dispositivo utilizado para regar as plantas.
+
 ---
 
 ## Telas Implementadas  
@@ -70,7 +71,9 @@ O **Irriga+** é um aplicativo móvel que se comunica com um dispositivo de irri
 - Nesta tela, o usuário pode cadastrar novas plantas, que serão armazenadas no banco de dados local (SQLite).  
 - O formulário contém os seguintes campos:  
   - **Nome** e **nível de umidade** (campos obrigatórios)  
-  - **Nome científico** (opcional)  
+  - **Nome científico** (opcional)
+ 
+![Image](https://github.com/user-attachments/assets/ac9398e8-a450-4836-be28-57ffe8af69ed)
 
 ### **Tela de Relatório**  
 
